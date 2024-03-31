@@ -1,11 +1,19 @@
 #include <windows.h>
 #include <stdint.h>
+#include "raytracing.h"
 
 #define internal static
 #define global static
 
-typedef uint8_t uint8;
-typedef uint32_t uint32;
+typedef uint8_t 	uint8;
+typedef uint16_t 	uint16;
+typedef uint32_t 	uint32;
+typedef uint64_t 	uint64;
+
+typedef int8_t 		int8;
+typedef int16_t 	int16;
+typedef int32_t 	int32;
+typedef int64_t 	int64;
 
 global BITMAPINFO  BitmapInfo; // RGB information for each pixel
 global void *BitmapMemory; // pointer to bottom of section where the bitmap is stored 
@@ -179,4 +187,3 @@ internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleft
   );
 
 };
-
