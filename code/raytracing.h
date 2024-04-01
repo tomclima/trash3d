@@ -201,7 +201,6 @@ VECTOR3D first_intersection_rgb(SCENE *scene, VECTOR3D ray_vector, VECTOR3D eye_
         for(int i = 0; i <= 2; i++)
         {
             rgb.values[i] = scene->spheres[smallest_iter].color.values[i]; 
-            OutputDebugStringA("Legal");
         };
     };
     return rgb;
