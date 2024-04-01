@@ -43,9 +43,9 @@ VECTOR3D vec_MultbyScalar(VECTOR3D vec1, int scalar)
     return resulting_vec;
 };
 
-int vec_DotProduct(VECTOR3D vec1, VECTOR3D vec2)
+float vec_DotProduct(VECTOR3D vec1, VECTOR3D vec2)
 {
-    int result = 0;
+    float result = 0;
 
     for(int i = 0; i < 3; i++)
     {
