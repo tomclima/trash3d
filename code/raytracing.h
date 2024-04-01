@@ -1,4 +1,9 @@
 #include <stdint.h>
+#include <math.h>
+#include "vectors.h"
+#include <Windows.h>
+
+
 //#include "geometry.h"
 
 typedef uint8_t 	uint8;
@@ -12,124 +17,212 @@ typedef int32_t 	int32;
 typedef int64_t 	int64;
 
 
-struct Eye
+struct EYE
 {
-	Vector3D position;
-    Vector3D orientation;
+	VECTOR3D position;
 };
 
-struct Viewport
+struct VIEWPORT
 {
 	int distance_to_eye;
 	int width;
 	int height;
 };
 
-struct Canvas
+struct CANVAS
 {
 	int width;
 	int height;
 };
 
-
-struct Vector3D
+CANVAS set_canvas(int width, int height)
 {
-	int values[2];
+    CANVAS canvas;
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+}
+
+struct YXpixelCoord
+{
+	int yx[2];
 };
 
-struct YXCoord
+struct SPHERE
 {
-	int Ycoord;
-	int Xcoord;
+    VECTOR3D center;
+    VECTOR3D color;
+    float radius;
 };
 
-struct Sphere
+SPHERE set_sphere(float center[3], float color[3], float radius)
 {
-    Vector3D center;
-    Vector3D Color;
-    int radius;
-};
+    SPHERE sphere;
 
-struct Scene 
-{
-	Sphere spheres[3];
-};
 
-Vector3D vec_sum(Vector3D vec1, Vector3D vec2)
-{
-    Vector3D resulting_vec;
-    int result;
-
-    for(uint8 i = 0; i < 3; i++)
+    for(int i = 0; i < 3; i++)
     {
-        result = vec1.values[i] + vec2.values[i];
-        resulting_vec.values[i] = result;
-    };
-
-    return resulting_vec;
+        sphere.color.values[i] = color[i];
+        sphere.center.values[i] = center[i];
+    }
+    sphere.radius = radius;
+    
+    return sphere;
 };
 
-Vector3D vec_MultbyScalar(Vector3D vec1, int scalar)
+struct SCENE 
 {
-    Vector3D resulting_vec;
-    int result;
+	SPHERE spheres[3];
+};
 
-    for(uint8 i = 0; i < 3; i++)
+
+SCENE set_scene(SPHERE spheres[3])
+{
+    SCENE scene;
+
+    for(int i = 0; i < 3; i ++)
     {
-        result = vec1.values[i] * scalar;
-        resulting_vec.values[i] = result;
+        scene.spheres[i] = spheres[i];
     };
-
-    return resulting_vec;
+    return scene;
 };
 
-int vec_DotProduct(Vector3D vec1, Vector3D vec2)
+
+YXpixelCoord screen_to_canvas(CANVAS *canvas, int screen_y, int screen_x)
 {
-    int result = 0;
+    YXpixelCoord YX_canvas;
 
-    for(uint8 i = 0; i < 3; i++)
-    {
-        result += vec1.values[i] * vec2.values[i];
-    };
+	// YX_screen.Ycoord = (canvas->height/2) - canvas_y;
+    YX_canvas.yx[0] = (canvas->height/2) - screen_y;
+	//YX_screen.Xcoord = (canvas->width/2) + canvas_x;
+    YX_canvas.yx[1] = screen_x - (canvas->width/2); 
 
-    return result;
+	return YX_canvas;
 };
 
-YXCoord canvas_to_screen_conversion(Canvas *canvas, char canvas_x, int canvas_y)
+VECTOR3D canvas_to_viewport_conversion(CANVAS *canvas, VIEWPORT *viewport, int canvas_x, int canvas_y)
 {
-    YXCoord YX_screen;
+	VECTOR3D XYZviewport;
 
-	YX_screen.Ycoord = (canvas->height/2) - canvas_y;
-	YX_screen.Xcoord = (canvas->width/2) + canvas_x;
-
-	return YX_screen;
-};
-
-Vector3D canvas_to_viewport_conversion(Canvas *canvas, Viewport *viewport, int canvas_x, int canvas_y)
-{
-	Vector3D XYZviewport;
-
-	XYZviewport.values[0] = canvas_x*((viewport->width)/(canvas->width));
-	XYZviewport.values[1] = canvas_y*((viewport->height)/(canvas->height));
+	XYZviewport.values[0] = canvas_x*((float)(viewport->width)/(canvas->width));
+	XYZviewport.values[1] = canvas_y*((float)(viewport->height)/(canvas->height));
     XYZviewport.values[2] = viewport->distance_to_eye;
 	
     return XYZviewport;
 };
 
-
-bool Ray_intersection_sphere(Vector3D ray_vector, Sphere sphere)
+float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE sphere)
 {
-    bool intersects = false;
+
+    bool ray_intersects = false;
+
+    // quadratic form at^2 + bt + c = 0
+    float a = 0;
+    float b = 0;
+    float c = 0;
+
+    for(int i = 0; i < 3; i++)
+    {
+        a += pow(ray_vector.values[i], 2);
+        b += 2*(eye_position.values[i]*ray_vector.values[i]) - 2*(ray_vector.values[i]*sphere.center.values[i]);
+        c += pow(eye_position.values[i], 2) + pow(sphere.center.values[i], 2) - 2*(eye_position.values[i]*sphere.center.values[i]);
+    };
+
+    c -= pow(sphere.radius, 2);
 
     
-    return intersects
-}
+    float results[2];
 
-Vector3D SimulatePixelColor(Scene scene, Eye eye, Canvas canvas, Viewport viewport, Sphere sphere, int pixelX, int pixelY)
+    // delta verification
+    float delta = pow(b, 2) - 4*a*c;
+
+    if(delta > 0)
+    {
+        results[0] = (float)(-b + sqrt(delta))/(2*a);
+        results[1] = (float)(-b - sqrt(delta)/2*a);   
+    };
+
+    float sorted_results[2];
+
+    if(results[0] > results[1])
+    {
+        sorted_results[0] = results[1];
+        sorted_results[1] = results[0]; 
+    }
+    else
+    {
+        sorted_results[0] = results[0];
+        sorted_results[1] = results[1];
+    };
+
+    float t_result = sorted_results[0];
+
+    if(t_result <= 0)
+    {
+        t_result = sorted_results[1];
+    };
+
+    float t_valid = 0;
+
+    if(t_result > 1)
+    {
+        t_valid = t_result;
+    };
+
+    return t_valid; //only t > 1 intersections are valid, all others default to 0 as an error
+}; 
+
+VECTOR3D first_intersection_rgb(SCENE *scene, VECTOR3D ray_vector, VECTOR3D eye_position)
 {
-    Vector3D XYZviewport = canvas_to_viewport_conversion(&canvas, &viewport, pixelX, pixelY);
-    
-    Vector3D ray_vector = vec_sum(XYZviewport, vec_MultbyScalar(eye.position, -1));
+    VECTOR3D rgb;
+    float smallest_interseciton = INFINITY;
+    int smallest_iter = -1;
+    float current_intersection = smallest_interseciton;
 
-}
+    for(int i = 0; i <= 2; i ++)
+    {
+        current_intersection = ray_intersection_sphere(ray_vector, eye_position, scene->spheres[i]);
+        if((current_intersection < smallest_interseciton)&(current_intersection > 1))
+        {
+            smallest_interseciton = current_intersection;
+            smallest_iter = i;
+        };
+    };
+
+    if (smallest_iter == -1)
+    {
+        for(int i = 0; i <= 2; i++)
+        {
+            rgb.values[i] = 255; //rgb do background escuro
+        };
+    }
+    else
+    {
+        for(int i = 0; i <= 2; i++)
+        {
+            rgb.values[i] = scene->spheres[smallest_iter].color.values[i]; 
+            OutputDebugStringA("Legal");
+        };
+    };
+    return rgb;
+};
+
+VECTOR3D SimulatePixelColor(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY)
+{
+    VECTOR3D pixelcolor;
+
+    YXpixelCoord YX_canvas = screen_to_canvas(&canvas, pixelY, pixelX);
+
+    
+    int canvasY = YX_canvas.yx[0];
+    int canvasX = YX_canvas.yx[1];
+
+    VECTOR3D XYZviewport = canvas_to_viewport_conversion(&canvas, &viewport, canvasX, canvasY);
+    
+    VECTOR3D ray_vector = vec_sum(XYZviewport, vec_MultbyScalar(eye.position, -1));
+
+    pixelcolor = first_intersection_rgb(&scene, ray_vector, eye.position);
+    
+    return pixelcolor;
+};
 

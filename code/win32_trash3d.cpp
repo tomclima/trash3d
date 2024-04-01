@@ -21,6 +21,20 @@ global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
+global float center1[3] = {0, 0, 5};
+global float center2[3] = {2, 2, 2};
+global float center3[3] = {3, 4, 4};
+
+global float color1[3] = {255, 0, 0};
+global float color2[3] = {0, 255, 0};
+global float color3[3] = {0, 0, 255};
+
+global float radius1 = 10;
+global float radius2 = 0.5;
+global float radius3 = 0.75;
+
+
+
 //pre declaration
 LRESULT WINAPI WindowProc(HWND, UINT, WPARAM, LPARAM);
 // end pre declaration
@@ -78,8 +92,36 @@ internal void Win32ResizeDIBSection(int width, int height);
 
 internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleftX, int topleftY, int width, int height);
 
-internal void render_weird_gradient()
+internal void render_spheres()
 {
+	EYE eye;
+	VIEWPORT viewport;
+	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
+
+	SPHERE sphere1 = set_sphere(center1, color1, radius1);
+	SPHERE sphere2 = set_sphere(center2, color2, radius2);
+	SPHERE sphere3 = set_sphere(center3, color3, radius3);
+
+	SPHERE spheres[] = {sphere1, sphere2, sphere3};
+
+	SCENE scene = set_scene(spheres);
+
+	for(int i = 0; i < 3; i++)
+	{
+		eye.position.values[i] = 0;
+	};
+	canvas.height = BitmapHeight;
+	canvas.width = BitmapWidth;
+	viewport.height = 1;
+	viewport.width = 1;
+	viewport.distance_to_eye = 1;
+	
+	
+	
+
+
+
+
 	int Pitch = BytesPerPixel*BitmapWidth;
 	uint8 *Row = (uint8 *)BitmapMemory;
 	for(int Y = 0; Y < BitmapHeight; Y++)
@@ -87,14 +129,17 @@ internal void render_weird_gradient()
 		uint32 *Pixel = (uint32 *)Row;
 		for(int X = 0; X < BitmapWidth; X++)
 		{
+
+			VECTOR3D rgb = SimulatePixelColor(scene, eye, canvas, viewport, X, Y);
+
 			uint8 *PixelColor = (uint8 *)Pixel;
-			*PixelColor = (uint8)Y; //Blue
+			*PixelColor = (uint8)rgb.values[2]; //Blue
 			++PixelColor;
 
-			*PixelColor = (uint8)X; // Green
+			*PixelColor = (uint8)rgb.values[1]; // Green
 			++PixelColor;
 
-			*PixelColor = 0; // red
+			*PixelColor = (uint8)rgb.values[0]; // red
 			++PixelColor;
 
 			*PixelColor = 0; //pading
@@ -169,8 +214,8 @@ internal void Win32ResizeDIBSection(int width, int height)
 	int BitmapMemorySize = (BitmapWidth*BitmapHeight)*BytesPerPixel; // how much we need to reserve for our bitmap
 	BitmapMemory = VirtualAlloc(0,BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE); //alocando a memoria
 
-	render_weird_gradient();
-}
+	render_spheres();
+};
 
 
 internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleftX, int topleftY, int width, int height)
