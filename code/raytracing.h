@@ -25,8 +25,8 @@ struct EYE
 struct VIEWPORT
 {
 	int distance_to_eye;
-	int width;
-	int height;
+	float width;
+	float height;
 };
 
 struct CANVAS
@@ -123,18 +123,18 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE
 
     for(int i = 0; i < 3; i++)
     {
-        a += pow(ray_vector.values[i], 2);
-        b += 2*(eye_position.values[i]*ray_vector.values[i]) - 2*(ray_vector.values[i]*sphere.center.values[i]);
-        c += pow(eye_position.values[i], 2) + pow(sphere.center.values[i], 2) - 2*(eye_position.values[i]*sphere.center.values[i]);
+        a += vec_DotProduct(ray_vector, ray_vector);
+        b += 2*vec_DotProduct(ray_vector, eye_position) - 2*vec_DotProduct(ray_vector, sphere.center);
+        c += vec_DotProduct(eye_position, eye_position) + vec_DotProduct(sphere.center, sphere.center) - 2*vec_DotProduct(sphere.center, eye_position);
     };
 
-    c -= pow(sphere.radius, 2);
+    c -= sphere.radius*sphere.radius;
 
     
-    float results[2];
+    float results[2] = { 0, 0 };
 
     // delta verification
-    float delta = pow(b, 2) - 4*a*c;
+    float delta = b*b - 4*a*c;
 
     if(delta > 0)
     {
@@ -193,7 +193,7 @@ VECTOR3D first_intersection_rgb(SCENE *scene, VECTOR3D ray_vector, VECTOR3D eye_
     {
         for(int i = 0; i <= 2; i++)
         {
-            rgb.values[i] = 255; //rgb do background escuro
+            rgb.values[i] = 0; //rgb do background escuro
         };
     }
     else
