@@ -29,7 +29,7 @@ VECTOR3D vec_sum(VECTOR3D vec1, VECTOR3D vec2)
     return resulting_vec;
 };
 
-VECTOR3D vec_MultbyScalar(VECTOR3D vec1, int scalar)
+VECTOR3D vec_MultbyScalar(VECTOR3D vec1, float scalar)
 {
     VECTOR3D resulting_vec;
     int result;
@@ -54,3 +54,23 @@ float vec_DotProduct(VECTOR3D vec1, VECTOR3D vec2)
 
     return result;
 };
+
+float vec_norm(VECTOR3D vector)
+{
+    float norm;
+    float squared_norm = vec_DotProduct(vector, vector);
+    norm = sqrt(squared_norm);
+    return norm;
+};
+
+float vec_cosine(VECTOR3D vec1, VECTOR3D vec2)
+{
+    // angle formula <vec1, vec2>/|vec1|*|vec2|
+    float angle;
+    float dot_product = vec_DotProduct(vec1, vec2);
+    float vec1_norm = vec_norm(vec1);
+    float vec2_norm = vec_norm(vec2);
+    
+    angle = dot_product/(vec1_norm * vec2_norm);
+    return angle;
+}

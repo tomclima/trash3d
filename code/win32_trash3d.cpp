@@ -21,17 +21,17 @@ global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
-global float center1[3] = {0, 0, 5};
-global float center2[3] = {2, 2, 2};
-global float center3[3] = {3, 4, 4};
+global float center1[3] = {0, -1, 3};
+global float center2[3] = {2, 0, 4};
+global float center3[3] = {-2, 0, 4};
 
 global float color1[3] = {255, 0, 0};
-global float color2[3] = {0, 255, 0};
-global float color3[3] = {0, 0, 255};
+global float color2[3] = {0, 0, 255};
+global float color3[3] = {0, 255, 0};
 
-global float radius1 = 10;
-global float radius2 = 0.5;
-global float radius3 = 0.75;
+global float radius1 = 1;
+global float radius2 = 1;
+global float radius3 = 1;
 
 
 
@@ -98,28 +98,28 @@ internal void render_spheres()
 	VIEWPORT viewport;
 	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
 
-	SPHERE sphere1 = set_sphere(center1, color1, radius1);
-	SPHERE sphere2 = set_sphere(center2, color2, radius2);
-	SPHERE sphere3 = set_sphere(center3, color3, radius3);
+	SPHERE sphere1 = set_sphere(center1, color1, radius1, 0);
+	SPHERE sphere2 = set_sphere(center2, color2, radius2, 0);
+	SPHERE sphere3 = set_sphere(center3, color3, radius3, 0);
 
 	SPHERE spheres[] = {sphere1, sphere2, sphere3};
 
-	SCENE scene = set_scene(spheres);
+	LIGHT ambient_light = set_ambient_light(0.3);
+	float point_light_pos[3] = {0, 0, 0};
+	LIGHT point_light = set_point_light(point_light_pos, 0.7);
+	LIGHT lights[] = {ambient_light, point_light};
+	SCENE scene = set_scene(spheres, lights);
 
 	for(int i = 0; i < 3; i++)
 	{
 		eye.position.values[i] = 0;
 	};
+	
 	canvas.height = BitmapHeight;
 	canvas.width = BitmapWidth;
-	viewport.height = 1;
-	viewport.width = 1;
+	viewport.height = (float)canvas.height/canvas.width;
+	viewport.width = 1;//(float)canvas.width/canvas.height;
 	viewport.distance_to_eye = 1;
-	
-	
-	
-
-
 
 
 	int Pitch = BytesPerPixel*BitmapWidth;
