@@ -21,17 +21,17 @@ global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
-global float center1[3] = {0, 0, 5};
-global float center2[3] = {2, 2, 2};
-global float center3[3] = {3, 4, 4};
+global float center1[3] = {0, -1, 3};
+global float center2[3] = {2, 0, 4};
+global float center3[3] = {-2, 0, 4};
 
 global float color1[3] = {255, 0, 0};
 global float color2[3] = {0, 255, 0};
 global float color3[3] = {0, 0, 255};
 
-global float radius1 = 10;
-global float radius2 = 0.5;
-global float radius3 = 0.75;
+global float radius1 = 1;
+global float radius2 = 1;
+global float radius3 = 1;
 
 
 
@@ -112,15 +112,11 @@ internal void render_spheres()
 	};
 	canvas.height = BitmapHeight;
 	canvas.width = BitmapWidth;
-	viewport.height = 1;
+	viewport.height = (float)BitmapHeight/BitmapWidth;
 	viewport.width = 1;
 	viewport.distance_to_eye = 1;
 	
 	
-	
-
-
-
 
 	int Pitch = BytesPerPixel*BitmapWidth;
 	uint8 *Row = (uint8 *)BitmapMemory;
