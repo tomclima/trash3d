@@ -15,82 +15,36 @@ typedef int16_t 	int16;
 typedef int32_t 	int32;
 typedef int64_t 	int64;
 
+global bool running;
+
+
 global BITMAPINFO  BitmapInfo; // RGB information for each pixel
 global void *BitmapMemory; // pointer to bottom of section where the bitmap is stored 
 global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
-global float center1[3] = {0, -1, 3};
+global float center1[3] = {1, 0.5, 3};
 global float center2[3] = {2, 0, 4};
-global float center3[3] = {-2, 0, 4};
+global float center3[3] = {-1, 0, 4};
+global float center4[3] = {0, -1, 3};
 
 global float color1[3] = {255, 0, 0};
 global float color2[3] = {0, 0, 255};
 global float color3[3] = {0, 255, 0};
+global float color4[3] = {255, 255, 0};
 
 global float radius1 = 1;
 global float radius2 = 1;
 global float radius3 = 1;
+global float radius4 = 1;
 
 
 
-//pre declaration
-LRESULT WINAPI WindowProc(HWND, UINT, WPARAM, LPARAM);
-// end pre declaration
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-{
-	WNDCLASSEX 	WindowClass;
-	HWND 		hMainWindow;
-	MSG 		Msg;
-
-	// Defining the attributes of the Window factory
-	WindowClass = {};
-	WindowClass.cbSize			= sizeof(WNDCLASSEX),
-	WindowClass.style 			= CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
-	WindowClass.lpfnWndProc 	= WindowProc;
-	WindowClass.hInstance 		= hInstance;
-	WindowClass.lpszClassName	= "trash3dWindowClass";
-	
-	//creating the window in which our program runs
-	RegisterClassEx(&WindowClass);
-	hMainWindow = CreateWindowEx(
-		0,
-		WindowClass.lpszClassName,
-		"trash3d",
-		WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		hInstance,
-		0
-	);
-	//defining message loop
-	bool running = true;
-	while(running)
-	{
-		BOOL evaluation = GetMessage(&Msg, hMainWindow, 0, 0);
-		if (evaluation > 0)
-		{
-			TranslateMessage(&Msg);
-			DispatchMessage(&Msg);
-		}
-		else
-		{
-			running = false;
-		}
-	}
-}
 
 
-// Pre declaration
-internal void Win32ResizeDIBSection(int width, int height); 
 
-internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleftX, int topleftY, int width, int height);
+
 
 internal void render_spheres()
 {
@@ -101,14 +55,15 @@ internal void render_spheres()
 	SPHERE sphere1 = set_sphere(center1, color1, radius1, 0);
 	SPHERE sphere2 = set_sphere(center2, color2, radius2, 0);
 	SPHERE sphere3 = set_sphere(center3, color3, radius3, 0);
+	SPHERE sphere4 = set_sphere(center4, color4, radius4,0);	
 
-	SPHERE spheres[] = {sphere1, sphere2, sphere3};
+	SPHERE spheres[] = {sphere1, sphere2, sphere3, sphere4};
 
-	LIGHT ambient_light = set_ambient_light(0.3);
-	float point_light_pos[3] = {0, 0, 0};
-	LIGHT point_light = set_point_light(point_light_pos, 0.7);
+	LIGHT ambient_light = set_ambient_light(0.2);
+	float point_light_pos[3] = {0,-0.2, 3};
+	LIGHT point_light = set_point_light(point_light_pos, 0.6);
 	LIGHT lights[] = {ambient_light, point_light};
-	SCENE scene = set_scene(spheres, lights);
+	SCENE scene = set_scene(spheres, lights);	
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -149,6 +104,77 @@ internal void render_spheres()
 		Row += Pitch;
 	}	
 }
+
+
+
+
+
+
+
+
+//pre declaration
+LRESULT WINAPI WindowProc(HWND, UINT, WPARAM, LPARAM);
+// end pre declaration
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	WNDCLASSEX 	WindowClass;
+	HWND 		hMainWindow;
+	MSG 		Msg;
+
+	// Defining the attributes of the Window factory
+	WindowClass = {};
+	WindowClass.cbSize			= sizeof(WNDCLASSEX),
+	WindowClass.style 			= CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+	WindowClass.lpfnWndProc 	= WindowProc;
+	WindowClass.hInstance 		= hInstance;
+	WindowClass.lpszClassName	= "trash3dWindowClass";
+	
+	//creating the window in which our program runs
+	RegisterClassEx(&WindowClass);
+	hMainWindow = CreateWindowEx(
+		0,
+		WindowClass.lpszClassName,
+		"trash3d",
+		WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,	
+		CW_USEDEFAULT,
+		0,
+		0,
+		hInstance,
+		0
+	);
+	
+	//main message loop
+	running = true;
+	while(running)
+	{
+		while(PeekMessage(&Msg, hMainWindow, 0, 0, PM_REMOVE))
+		{
+			if(Msg.message == WM_QUIT)
+			{
+				running = false;
+			};
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}
+		
+
+		render_spheres();
+		
+		UpdateWindow(hMainWindow);
+		
+	}
+}
+
+
+// Pre declaration
+internal void Win32ResizeDIBSection(int width, int height); 
+
+internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleftX, int topleftY, int width, int height);
+
 // End pre declaration
 
 LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -156,9 +182,6 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	LRESULT result = 0;
 	switch (uMsg)
 	{
-	case WM_ACTIVATEAPP: {
-		OutputDebugStringA("muerte");
-	}break;
 	case WM_SIZE: {
 		RECT ClientRect;
 		GetClientRect(hWnd, &ClientRect);
@@ -182,6 +205,10 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 	{
 		PostQuitMessage(0);
+	}break;
+	case WM_QUIT:
+	{
+		running = false;
 	}break;
 	default:
 	{

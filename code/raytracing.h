@@ -23,8 +23,6 @@ struct YXpixelCoord
 };
 
 
-
-
 struct EYE
 {
 	VECTOR3D position;
@@ -138,15 +136,15 @@ LIGHT set_ambient_light(float intensity)
 
 struct SCENE 
 {
-	SPHERE spheres[3];
+	SPHERE spheres[4];
     LIGHT lights[2];
 };
 
-SCENE set_scene(SPHERE spheres[3], LIGHT lights[2])
+SCENE set_scene(SPHERE spheres[4], LIGHT lights[2])
 {
     SCENE scene;
 
-    for(int i = 0; i < 3; i ++)
+    for(int i = 0; i <4; i ++)
     {
         scene.spheres[i] = spheres[i];
     };
@@ -193,8 +191,6 @@ VECTOR3D canvas_to_viewport_conversion(CANVAS *canvas, VIEWPORT *viewport, int c
 
 float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE sphere)
 {
-
-    bool ray_intersects = false;
 
     // quadratic form at^2 + bt + c = 0
     float a = 0;
@@ -300,7 +296,7 @@ HITINFO first_intersection_sphere(SCENE *scene, VECTOR3D ray_vector, VECTOR3D ey
     int smallest_iter = -1;
     float current_intersection = smallest_interseciton;
 
-    for(int i = 0; i <= 2; i ++)
+    for(int i = 0; i < 4; i ++)
     {
         current_intersection = ray_intersection_sphere(ray_vector, eye_position, scene->spheres[i]);
         if((current_intersection < smallest_interseciton)&(current_intersection > 1))
@@ -345,14 +341,18 @@ VECTOR3D SimulatePixelColor(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewpo
 
     HITINFO intersection_info = first_intersection_sphere(&scene, ray_vector, eye.position);
 
+
+    
     if(intersection_info.hit_happened)
     {
-        pixelcolor = vec_MultbyScalar(intersection_info.surface_info.color, calculate_total_light(scene, intersection_info));
+        float light_intensity = calculate_total_light(scene, intersection_info);
+        pixelcolor = vec_MultbyScalar(intersection_info.surface_info.color, light_intensity);
     }
     else
     {
         float black_rgb[3] = {0,0,0};
         pixelcolor = set_vector(black_rgb);
+        
     };
 
     return pixelcolor;
