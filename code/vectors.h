@@ -63,7 +63,7 @@ float vec_norm(VECTOR3D vector)
     //teste
     float norm;
     float squared_norm = vec_DotProduct(vector, vector);
-    norm = sqrt(squared_norm);
+    norm = sqrtf(squared_norm);
     return norm;
 };
 
@@ -129,9 +129,9 @@ MATRIX3D rotate_y(float angle)
 {
     MATRIX3D rotation_matrix;
 
-    float line1[3] = {cos(angle), 0, sin(angle)};
+    float line1[3] = {cosf(angle), 0, sinf(angle)};
     float line2[3] = {0, 1, 0};
-    float line3[3] = {-sin(angle), 0, cos(angle)};
+    float line3[3] = {-sinf(angle), 0, cosf(angle)};
 
     VECTOR3D lines[3] = {set_vector(line1), set_vector(line2), set_vector(line3)};
 
