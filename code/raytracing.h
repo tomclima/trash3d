@@ -362,7 +362,7 @@ HITINFO first_intersection_sphere(SCENE *scene, VECTOR3D ray_vector, VECTOR3D or
     return ray_hit;
 };
 
-VECTOR3D SimulatePixelColor(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY)
+VECTOR3D trace_ray(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY)
 {
     VECTOR3D pixelcolor;
 
