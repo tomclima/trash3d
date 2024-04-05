@@ -46,10 +46,10 @@ internal void render_spheres()
 	VIEWPORT viewport;
 	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
 
-	SPHERE sphere1 = set_sphere(center1, color1, radius1, 1000);
-	SPHERE sphere2 = set_sphere(center2, color2, radius2, 500);
-	SPHERE sphere3 = set_sphere(center3, color3, radius3, 500);
-	SPHERE sphere4 = set_sphere(center4, color4, radius4, 500);	
+	SPHERE sphere1 = set_sphere(center1, color1, radius1, 1000, 0);
+	SPHERE sphere2 = set_sphere(center2, color2, radius2, 500, 0);
+	SPHERE sphere3 = set_sphere(center3, color3, radius3, 500, 0);
+	SPHERE sphere4 = set_sphere(center4, color4, radius4, 500, 0);	
 
 	SPHERE spheres[] = {sphere1, sphere2, sphere3, sphere4};
 
@@ -87,7 +87,7 @@ internal void render_spheres()
 		for(int X = 0; X < BitmapWidth; X++)
 		{
 
-			VECTOR3D rgb = trace_ray(scene, eye, canvas, viewport, X, Y);
+			VECTOR3D rgb = simulate_pixel_color(scene, eye, canvas, viewport, X, Y, 0);
 
 			uint8 *PixelColor = (uint8 *)Pixel;
 			*PixelColor = (uint8)rgb.values[2]; //Blue

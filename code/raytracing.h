@@ -296,8 +296,8 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D origin_position, SPH
 }; 
 
 
-float compute_non_ambient_light(LIGHT, HITINFO, EYE*, SPHERE spheres[4]);
-float calculate_total_light(SCENE* scene, HITINFO ray_hit, EYE *eye)
+float compute_non_ambient_light(LIGHT, HITINFO, VECTOR3D, SPHERE spheres[4]);
+float calculate_total_light(SCENE* scene, HITINFO ray_hit, VECTOR3D eye_position)
 {
     float light_intensity = 0;
 
@@ -310,7 +310,7 @@ float calculate_total_light(SCENE* scene, HITINFO ray_hit, EYE *eye)
             break;
         
         default:
-            light_intensity += compute_non_ambient_light(scene->lights[i], ray_hit, eye, scene->spheres);
+            light_intensity += compute_non_ambient_light(scene->lights[i], ray_hit, eye_position, scene->spheres);
             break;
         };
     };
@@ -322,7 +322,7 @@ float calculate_total_light(SCENE* scene, HITINFO ray_hit, EYE *eye)
     return light_intensity;
 };
 
-float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye, SPHERE spheres[4])
+float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, VECTOR3D eye_position, SPHERE spheres[4])
 {
     float diffuse_light_intensity = 0;
     float specular_light_intensity = 0;
@@ -373,7 +373,7 @@ float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye, SPHERE s
         VECTOR3D reflection_vector_X = vec_sum(reflection_vector_Y, surface_to_light);
         reflection_vector = vec_sum(reflection_vector_Y, reflection_vector_X);
 
-        vision_ray_vector = vec_sum(ray_hit.position, vec_MultbyScalar(eye->position, -1));
+        vision_ray_vector = vec_sum(ray_hit.position, vec_MultbyScalar(eye_position, -1));
         float specular_cosine = vec_cosine(vision_ray_vector, reflection_vector);
         if(specular_cosine < 0) 
         {
@@ -387,7 +387,28 @@ float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye, SPHERE s
 };
 
 
-VECTOR3D trace_ray(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY)
+VECTOR3D trace_ray(VECTOR3D pixel_ray_vector, VECTOR3D origin, SCENE scene, uint8 max_reflections)
+{
+    VECTOR3D color;
+
+    HITINFO intersection_info = first_intersection_sphere(scene.spheres, pixel_ray_vector, origin, 1, INFINITY);
+
+    if(intersection_info.hit_happened)
+    {
+        float light_intensity = calculate_total_light(&scene, intersection_info, origin);
+        color = vec_MultbyScalar(intersection_info.surface_info.color, light_intensity);
+    }
+    else
+    {
+        float black_rgb[3] = {0,0,0};
+        color = set_vector(black_rgb);
+        
+    };
+
+    return color;
+};
+
+VECTOR3D simulate_pixel_color(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY, uint8 max_reflections)
 {
     VECTOR3D pixelcolor;
 
@@ -399,20 +420,9 @@ VECTOR3D trace_ray(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int p
     XYZviewport = vec_linear_transform(eye.orientation, XYZviewport);
 
     VECTOR3D pixel_ray_vector = vec_sum(XYZviewport, vec_MultbyScalar(eye.position, -1));
-    HITINFO intersection_info = first_intersection_sphere(scene.spheres, pixel_ray_vector, eye.position, 1, INFINITY);
+    
+    pixelcolor = trace_ray(pixel_ray_vector, eye.position, scene, max_reflections);
 
-    if(intersection_info.hit_happened)
-    {
-        float light_intensity = calculate_total_light(&scene, intersection_info, &eye);
-        pixelcolor = vec_MultbyScalar(intersection_info.surface_info.color, light_intensity);
-    }
-    else
-    {
-        float black_rgb[3] = {0,0,0};
-        pixelcolor = set_vector(black_rgb);
-        
-    };
 
     return pixelcolor;
 };
-
