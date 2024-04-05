@@ -15,24 +15,97 @@ typedef int16_t 	int16;
 typedef int32_t 	int32;
 typedef int64_t 	int64;
 
+global bool running;
+global double pi = 3.14159265;
+
 global BITMAPINFO  BitmapInfo; // RGB information for each pixel
 global void *BitmapMemory; // pointer to bottom of section where the bitmap is stored 
 global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
-global float center1[3] = {0, -1, 3};
-global float center2[3] = {2, 0, 4};
-global float center3[3] = {-2, 0, 4};
+global float center1[3] = {0, 1, 2};
+global float center2[3] = {2, -1.5, 4};
+global float center3[3] = {-2, 0.3, 2};
+global float center4[3] = {0, 0, 3};
 
 global float color1[3] = {255, 0, 0};
-global float color2[3] = {0, 255, 0};
-global float color3[3] = {0, 0, 255};
+global float color2[3] = {0, 0, 255};
+global float color3[3] = {0, 255, 0};
+global float color4[3] = {255, 255 , 0};
 
-global float radius1 = 1;
+global float radius1 = 0.5;
 global float radius2 = 1;
 global float radius3 = 1;
+global float radius4 = 1;
 
+
+internal void render_spheres()
+{
+	EYE eye;
+	VIEWPORT viewport;
+	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
+
+	SPHERE sphere1 = set_sphere(center1, color1, radius1, 1000);
+	SPHERE sphere2 = set_sphere(center2, color2, radius2, 500);
+	SPHERE sphere3 = set_sphere(center3, color3, radius3, 500);
+	SPHERE sphere4 = set_sphere(center4, color4, radius4, 500);	
+
+	SPHERE spheres[] = {sphere1, sphere2, sphere3, sphere4};
+
+	LIGHT ambient_light = set_ambient_light(0.1);
+	float point_light_pos[3] = {0.5, -2, 02};
+	LIGHT point_light = set_point_light(point_light_pos, 0.6);
+	float direction_ligth_dir[3] = {0, 0, 2};
+	LIGHT direction_ligth = set_directional_light(direction_ligth_dir, 0.5);
+
+	LIGHT lights[] = {ambient_light, point_light, direction_ligth};
+	SCENE scene = set_scene(spheres, lights);	
+
+	float eye_position[3] = {0,0,-4};
+	//float eye_position[3] = {-2.5, 0, -2};
+	//float eye_position[3] = {2.5, 0, -2};
+	
+	eye.position = set_vector(eye_position);
+
+	eye.orientation = get_identity_matrix();
+	//eye.orientation = rotate_y(-pi/19);
+	//eye.orientation = rotate_y(pi/13);
+	
+	canvas.height = BitmapHeight;
+	canvas.width = BitmapWidth;
+	viewport.height = (float)canvas.height/canvas.width;
+	viewport.width = 1;//(float)canvas.width/canvas.height;
+	viewport.distance_to_eye = 1;
+
+
+	int Pitch = BytesPerPixel*BitmapWidth;
+	uint8 *Row = (uint8 *)BitmapMemory;
+	for(int Y = 0; Y < BitmapHeight; Y++)
+	{
+		uint32 *Pixel = (uint32 *)Row;
+		for(int X = 0; X < BitmapWidth; X++)
+		{
+
+			VECTOR3D rgb = SimulatePixelColor(scene, eye, canvas, viewport, X, Y);
+
+			uint8 *PixelColor = (uint8 *)Pixel;
+			*PixelColor = (uint8)rgb.values[2]; //Blue
+			++PixelColor;
+
+			*PixelColor = (uint8)rgb.values[1]; // Green
+			++PixelColor;
+
+			*PixelColor = (uint8)rgb.values[0]; // red
+			++PixelColor;
+
+			*PixelColor = 0; //pading
+			++PixelColor;
+			++Pixel;
+		}
+		Row += Pitch;
+	}	
+}
 
 
 //pre declaration
@@ -62,27 +135,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		WS_OVERLAPPEDWINDOW|WS_VISIBLE,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		CW_USEDEFAULT,
+		CW_USEDEFAULT,	
 		CW_USEDEFAULT,
 		0,
 		0,
 		hInstance,
 		0
 	);
-	//defining message loop
-	bool running = true;
+	
+	//main message loop
+	running = true;
 	while(running)
 	{
-		BOOL evaluation = GetMessage(&Msg, hMainWindow, 0, 0);
-		if (evaluation > 0)
+		while(PeekMessage(&Msg, hMainWindow, 0, 0, PM_REMOVE))
 		{
+			if(Msg.message == WM_QUIT)
+			{
+				running = false;
+			};
 			TranslateMessage(&Msg);
 			DispatchMessage(&Msg);
 		}
-		else
-		{
-			running = false;
-		}
+		
+
+		render_spheres();
+		
+		UpdateWindow(hMainWindow);
+		
 	}
 }
 
@@ -92,59 +171,6 @@ internal void Win32ResizeDIBSection(int width, int height);
 
 internal void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int topleftX, int topleftY, int width, int height);
 
-internal void render_spheres()
-{
-	EYE eye;
-	VIEWPORT viewport;
-	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
-
-	SPHERE sphere1 = set_sphere(center1, color1, radius1);
-	SPHERE sphere2 = set_sphere(center2, color2, radius2);
-	SPHERE sphere3 = set_sphere(center3, color3, radius3);
-
-	SPHERE spheres[] = {sphere1, sphere2, sphere3};
-
-	SCENE scene = set_scene(spheres);
-
-	for(int i = 0; i < 3; i++)
-	{
-		eye.position.values[i] = 0;
-	};
-	canvas.height = BitmapHeight;
-	canvas.width = BitmapWidth;
-	viewport.height = (float)BitmapHeight/BitmapWidth;
-	viewport.width = 1;
-	viewport.distance_to_eye = 1;
-	
-	
-
-	int Pitch = BytesPerPixel*BitmapWidth;
-	uint8 *Row = (uint8 *)BitmapMemory;
-	for(int Y = 0; Y < BitmapHeight; Y++)
-	{
-		uint32 *Pixel = (uint32 *)Row;
-		for(int X = 0; X < BitmapWidth; X++)
-		{
-
-			VECTOR3D rgb = SimulatePixelColor(scene, eye, canvas, viewport, X, Y);
-
-			uint8 *PixelColor = (uint8 *)Pixel;
-			*PixelColor = (uint8)rgb.values[2]; //Blue
-			++PixelColor;
-
-			*PixelColor = (uint8)rgb.values[1]; // Green
-			++PixelColor;
-
-			*PixelColor = (uint8)rgb.values[0]; // red
-			++PixelColor;
-
-			*PixelColor = 0; //pading
-			++PixelColor;
-			++Pixel;
-		}
-		Row += Pitch;
-	}	
-}
 // End pre declaration
 
 LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -152,9 +178,6 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	LRESULT result = 0;
 	switch (uMsg)
 	{
-	case WM_ACTIVATEAPP: {
-		OutputDebugStringA("muerte");
-	}break;
 	case WM_SIZE: {
 		RECT ClientRect;
 		GetClientRect(hWnd, &ClientRect);
@@ -178,6 +201,10 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 	{
 		PostQuitMessage(0);
+	}break;
+	case WM_QUIT:
+	{
+		running = false;
 	}break;
 	default:
 	{
