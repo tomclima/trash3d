@@ -16,7 +16,6 @@ typedef int16_t 	int16;
 typedef int32_t 	int32;
 typedef int64_t 	int64;
 
-
 struct YXpixelCoord
 {
 	int yx[2];
@@ -196,7 +195,6 @@ VECTOR3D canvas_to_viewport_conversion(CANVAS *canvas, VIEWPORT *viewport, EYE* 
 	XYZviewport.values[1] = canvas_y*((float)(viewport->height)/(canvas->height)) + eye->position.values[1];
     XYZviewport.values[2] = viewport->distance_to_eye + eye->position.values[2];
 	
-    // TODO (tom): generalizar para comportar multiplas posições diferentes, não só a em relação ao olho no (0,0,0)
     return XYZviewport;
 };
 
@@ -296,60 +294,21 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D origin_position, SPH
 }; 
 
 
-float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye)
-{
-    float diffuse_light_intensity = 0;
-    float specular_light_intensity = 0;
-    float combined_light_intensity;
-
-    VECTOR3D surface_to_light;
-    VECTOR3D reflection_vector;
-    VECTOR3D vision_ray_vector;
-
-    switch (light.type)
-    {
-    case 'p':
-        surface_to_light = vec_sum(light.position, vec_MultbyScalar(ray_hit.position, -1));
-        break;
-    
-    default:
-        surface_to_light = vec_sum(ray_hit.position,vec_MultbyScalar(light.orientation, -1));
-    };
-
-    // calculating Y and X components of relfection vector
-    VECTOR3D reflection_vector_Y = vec_MultbyScalar(ray_hit.normal_vec, vec_cosine(ray_hit.normal_vec, surface_to_light));
-    VECTOR3D reflection_vector_X = vec_sum(reflection_vector_Y, surface_to_light);
-    reflection_vector = vec_sum(reflection_vector_Y, reflection_vector_X);
-
-    vision_ray_vector = vec_sum(ray_hit.position, vec_MultbyScalar(eye->position, -1));
-    float diffuse_cosine = vec_cosine(ray_hit.normal_vec, surface_to_light);
-    float specular_cosine = vec_cosine(vision_ray_vector, reflection_vector);
-
-    if((specular_cosine < 0)|(ray_hit.surface_info.specularity < 0)) {specular_cosine = 0;};
-    if(diffuse_cosine < 0) {diffuse_cosine = 0;};
-    
-    diffuse_light_intensity = (light.intensity)*diffuse_cosine;
-    specular_light_intensity = (light.intensity)*specular_cosine;
-
-    combined_light_intensity = diffuse_light_intensity + specular_light_intensity;
-
-    return combined_light_intensity;
-};
-
-float calculate_total_light(SCENE scene, HITINFO ray_hit, EYE *eye)
+float compute_non_ambient_light(LIGHT, HITINFO, EYE*, SPHERE spheres[4]);
+float calculate_total_light(SCENE* scene, HITINFO ray_hit, EYE *eye)
 {
     float light_intensity = 0;
 
     for(int i = 0; i < 2; i++)
     {
-        switch (scene.lights[i].type)
+        switch (scene->lights[i].type)
         {
         case 'a':
-            light_intensity += scene.lights[i].intensity;
+            light_intensity += scene->lights[i].intensity;
             break;
         
         default:
-            light_intensity += compute_non_ambient_light(scene.lights[i], ray_hit, eye);
+            light_intensity += compute_non_ambient_light(scene->lights[i], ray_hit, eye, scene->spheres);
             break;
         };
     };
@@ -361,68 +320,88 @@ float calculate_total_light(SCENE scene, HITINFO ray_hit, EYE *eye)
     return light_intensity;
 };
 
-HITINFO first_intersection_sphere(SCENE *scene, VECTOR3D ray_vector, VECTOR3D origin)
+float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye, SPHERE spheres[4])
 {
+    float diffuse_light_intensity = 0;
+    float specular_light_intensity = 0;
+    float combined_light_intensity;
+    float max_blocked;
 
-    HITINFO ray_hit;
+    VECTOR3D surface_to_light;
+    VECTOR3D reflection_vector;
+    VECTOR3D vision_ray_vector;
 
-    float smallest_interseciton = INFINITY;
-    int smallest_iter = -1;
-    float current_intersection = smallest_interseciton;
-
-    for(int i = 0; i < 4; i ++)
+    switch (light.type)
     {
-        current_intersection = ray_intersection_sphere(ray_vector, origin, scene->spheres[i]);
-        if((current_intersection < smallest_interseciton)&(current_intersection > 1))
+    case 'p': // if light is point light
         {
-            smallest_interseciton = current_intersection;
-            smallest_iter = i;
-        };
+            surface_to_light = vec_sum(light.position, vec_MultbyScalar(ray_hit.position, -1));
+            max_blocked = 1;
+        }break;
+    
+    default: // if light is directional light
+        {
+            surface_to_light = light.orientation;
+            max_blocked = INFINITY;
+        }
+    };
+
+    // calculate shadows
+    bool unblocked = true;
+    bool teste = first_intersection_sphere(spheres, surface_to_light, ray_hit.position, 0.001, max_blocked).hit_happened;
+
+    if(teste)
+    {
+        unblocked = false; 
     };
 
 
-    if (smallest_iter == -1)
+    // diffuse light
+    if(unblocked)
     {
-        for(int i = 0; i <= 2; i++)
-        {
-            ray_hit.hit_happened = 0; //hit info nulo
-        };
+        float diffuse_cosine = vec_cosine(ray_hit.normal_vec, surface_to_light);
+        if(diffuse_cosine < 0) {diffuse_cosine = 0;};
+        diffuse_light_intensity = (light.intensity)*diffuse_cosine;
     }
-    else
+
+    if((ray_hit.surface_info.specularity > 0)&(unblocked)) //specular light
     {
-        VECTOR3D hit_position = vec_sum(origin, vec_MultbyScalar(ray_vector, smallest_interseciton));
-        ray_hit.position = hit_position;
-        ray_hit.normal_vec = vec_sum(scene->spheres[smallest_iter].center, vec_MultbyScalar(hit_position, -1));
-        ray_hit.surface_info = scene->spheres[smallest_iter].surface_info;
-        ray_hit.hit_happened = 1;
+        // calculating Y and X components of relfection vector
+        VECTOR3D reflection_vector_Y = vec_MultbyScalar(ray_hit.normal_vec, vec_cosine(ray_hit.normal_vec, surface_to_light));
+        VECTOR3D reflection_vector_X = vec_sum(reflection_vector_Y, surface_to_light);
+        reflection_vector = vec_sum(reflection_vector_Y, reflection_vector_X);
+
+        vision_ray_vector = vec_sum(ray_hit.position, vec_MultbyScalar(eye->position, -1));
+        float specular_cosine = vec_cosine(vision_ray_vector, reflection_vector);
+        if(specular_cosine < 0) 
+        {
+            specular_cosine = 0;
+        };
+        specular_light_intensity = (light.intensity)*specular_cosine;
     };
 
-    return ray_hit;
+    combined_light_intensity = diffuse_light_intensity + specular_light_intensity;
+    return combined_light_intensity;
 };
+
 
 VECTOR3D trace_ray(SCENE scene, EYE eye, CANVAS canvas, VIEWPORT viewport, int pixelX, int pixelY)
 {
     VECTOR3D pixelcolor;
 
     YXpixelCoord YX_canvas = screen_to_canvas(&canvas, pixelY, pixelX);
-
-    
     int canvasY = YX_canvas.yx[0];
     int canvasX = YX_canvas.yx[1];
 
     VECTOR3D XYZviewport = canvas_to_viewport_conversion(&canvas, &viewport, &eye, canvasX, canvasY);
     XYZviewport = vec_linear_transform(eye.orientation, XYZviewport);
 
+    VECTOR3D pixel_ray_vector = vec_sum(XYZviewport, vec_MultbyScalar(eye.position, -1));
+    HITINFO intersection_info = first_intersection_sphere(scene.spheres, pixel_ray_vector, eye.position, 1, INFINITY);
 
-    VECTOR3D ray_vector = vec_sum(XYZviewport, vec_MultbyScalar(eye.position, -1));
-
-    HITINFO intersection_info = first_intersection_sphere(&scene, ray_vector, eye.position);
-
-
-    
     if(intersection_info.hit_happened)
     {
-        float light_intensity = calculate_total_light(scene, intersection_info, &eye);
+        float light_intensity = calculate_total_light(&scene, intersection_info, &eye);
         pixelcolor = vec_MultbyScalar(intersection_info.surface_info.color, light_intensity);
     }
     else
