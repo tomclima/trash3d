@@ -224,8 +224,8 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE
 
     if(delta > 0)
     {
-        results[0] = (float)(-b + sqrt(delta))/(2*a);
-        results[1] = (float)(-b - sqrt(delta)/2*a);   
+        results[0] = (-b + sqrtf(delta))/(2*a);
+        results[1] = (-b - sqrtf(delta))/(2*a);   
     };
 
     float sorted_results[2];
