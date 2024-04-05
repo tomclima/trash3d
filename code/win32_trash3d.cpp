@@ -26,7 +26,7 @@ global int BytesPerPixel;
 
 global float center1[3] = {0, 1, 2};
 global float center2[3] = {2, -1.5, 4};
-global float center3[3] = {-2, 0.3, 2};
+global float center3[3] = {0.25,0,2};//{-2, 0.3, 2};
 global float center4[3] = {0, 0, 3};
 
 global float color1[3] = {255, 0, 0};
@@ -36,7 +36,7 @@ global float color4[3] = {255, 255 , 0};
 
 global float radius1 = 0.5;
 global float radius2 = 1;
-global float radius3 = 1;
+global float radius3 = 0.25;
 global float radius4 = 1;
 
 
@@ -54,7 +54,7 @@ internal void render_spheres()
 	SPHERE spheres[] = {sphere1, sphere2, sphere3, sphere4};
 
 	LIGHT ambient_light = set_ambient_light(0.1);
-	float point_light_pos[3] = {0.5, -2, 02};
+	float point_light_pos[3] = {1,0,1};
 	LIGHT point_light = set_point_light(point_light_pos, 0.6);
 	float direction_ligth_dir[3] = {0, 0, 2};
 	LIGHT direction_ligth = set_directional_light(direction_ligth_dir, 0.5);
@@ -87,7 +87,7 @@ internal void render_spheres()
 		for(int X = 0; X < BitmapWidth; X++)
 		{
 
-			VECTOR3D rgb = SimulatePixelColor(scene, eye, canvas, viewport, X, Y);
+			VECTOR3D rgb = trace_ray(scene, eye, canvas, viewport, X, Y);
 
 			uint8 *PixelColor = (uint8 *)Pixel;
 			*PixelColor = (uint8)rgb.values[2]; //Blue
