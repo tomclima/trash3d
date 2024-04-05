@@ -68,6 +68,7 @@ struct SURFACEINFO
 {
     VECTOR3D color;
     float specularity;
+    float reflexivity;
 };
 
 SURFACEINFO set_surfaceinfo(float color[3], float specularity)
@@ -88,7 +89,7 @@ struct SPHERE
     float radius;
 };
 
-SPHERE set_sphere(float center[3], float color[3], float radius, float specularity)
+SPHERE set_sphere(float center[3], float color[3], float radius, float specularity, float reflexivity)
 {
     SPHERE sphere;
 
@@ -96,6 +97,7 @@ SPHERE set_sphere(float center[3], float color[3], float radius, float speculari
     sphere.radius = radius;
     sphere.surface_info.color = set_vector(color);
     sphere.surface_info.specularity = specularity;
+    sphere.surface_info.reflexivity = reflexivity;
     
     return sphere;
 };
