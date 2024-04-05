@@ -187,6 +187,7 @@ YXpixelCoord screen_to_canvas(CANVAS *canvas, int screen_y, int screen_x)
 	return YX_canvas;
 };
 
+
 VECTOR3D canvas_to_viewport_conversion(CANVAS *canvas, VIEWPORT *viewport, EYE* eye, int canvas_x, int canvas_y)
 {
 	VECTOR3D XYZviewport;
@@ -199,8 +200,50 @@ VECTOR3D canvas_to_viewport_conversion(CANVAS *canvas, VIEWPORT *viewport, EYE* 
     return XYZviewport;
 };
 
-float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE sphere)
+
+
+float ray_intersection_sphere(VECTOR3D, VECTOR3D, SPHERE);
+HITINFO first_intersection_sphere(SPHERE spheres[3], VECTOR3D ray_vector, VECTOR3D origin, float min_intersection, float max_intersection)
 {
+
+    HITINFO ray_hit;
+
+    float smallest_interseciton = max_intersection;
+    int smallest_iter = -1;
+    float current_intersection = smallest_interseciton;
+
+    for(int i = 0; i < 4; i ++)
+    {
+        current_intersection = ray_intersection_sphere(ray_vector, origin, spheres[i]);
+        if((current_intersection < smallest_interseciton)&(current_intersection > min_intersection))
+        {
+            smallest_interseciton = current_intersection;
+            smallest_iter = i;
+        };
+    };
+
+
+    if (smallest_iter == -1)
+    {
+        ray_hit.hit_happened = 0; //hitinfo nulo
+    }
+    else
+    {
+        VECTOR3D hit_position = vec_sum(origin, vec_MultbyScalar(ray_vector, smallest_interseciton));
+        ray_hit.position = hit_position;
+        ray_hit.normal_vec = vec_sum(hit_position, vec_MultbyScalar(spheres[smallest_iter].center, -1));
+        ray_hit.surface_info = spheres[smallest_iter].surface_info;
+        ray_hit.hit_happened = 1;
+    };
+
+    return ray_hit;
+};
+
+
+float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D origin_position, SPHERE sphere)
+{
+
+    float t_result;
 
     // quadratic form at^2 + bt + c = 0
     float a = 0;
@@ -210,8 +253,8 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE
     for(int i = 0; i < 3; i++)
     {
         a += vec_DotProduct(ray_vector, ray_vector);
-        b += 2*vec_DotProduct(ray_vector, eye_position) - 2*vec_DotProduct(ray_vector, sphere.center);
-        c += vec_DotProduct(eye_position, eye_position) + vec_DotProduct(sphere.center, sphere.center) - 2*vec_DotProduct(sphere.center, eye_position);
+        b += 2*vec_DotProduct(ray_vector, origin_position) - 2*vec_DotProduct(ray_vector, sphere.center);
+        c += vec_DotProduct(origin_position, origin_position) + vec_DotProduct(sphere.center, sphere.center) - 2*vec_DotProduct(sphere.center, origin_position);
     };
 
     c -= sphere.radius*sphere.radius;
@@ -241,22 +284,17 @@ float ray_intersection_sphere(VECTOR3D ray_vector, VECTOR3D eye_position, SPHERE
         sorted_results[1] = results[1];
     };
 
-    float t_result = sorted_results[0];
+    t_result = sorted_results[0];
 
     if(t_result <= 0)
     {
         t_result = sorted_results[1];
     };
 
-    float t_valid = 0;
-
-    if(t_result > 1)
-    {
-        t_valid = t_result;
-    };
-
-    return t_valid; //only t > 1 intersections are valid, all others default to 0 as an error
+    
+    return t_result; 
 }; 
+
 
 float compute_non_ambient_light(LIGHT light, HITINFO ray_hit, EYE* eye)
 {
