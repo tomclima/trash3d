@@ -58,6 +58,7 @@ float vec_DotProduct(VECTOR3D vec1, VECTOR3D vec2)
     return result;
 };
 
+
 float vec_norm(VECTOR3D vector)
 {
     //teste
@@ -78,6 +79,20 @@ float vec_cosine(VECTOR3D vec1, VECTOR3D vec2)
     angle = dot_product/(vec1_norm * vec2_norm);
     return angle;
 }
+
+VECTOR3D vec_proj(VECTOR3D vec1, VECTOR3D vec2)
+{
+    VECTOR3D projected;
+    projected = vec_MultbyScalar(vec2, vec_cosine(vec1, vec2));
+    return projected;
+}
+
+VECTOR3D reflect(VECTOR3D vec, VECTOR3D surface_normal)
+{
+    VECTOR3D reflected_vector;
+    reflected_vector = vec_sum(vec_MultbyScalar(vec_proj(vec, surface_normal),2), vec_MultbyScalar(vec, -1));
+    return reflected_vector;
+} 
 
 
 struct MATRIX3D

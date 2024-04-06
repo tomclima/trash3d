@@ -24,20 +24,20 @@ global int BitmapWidth;
 global int BitmapHeight;
 global int BytesPerPixel;
 
-global float center1[3] = {0, 1, 2};
-global float center2[3] = {2, -1.5, 4};
-global float center3[3] = {0.25,0,2};//{-2, 0.3, 2};
-global float center4[3] = {0, 0, 3};
+global float center1[3] = {0, -1, 4};
+global float center2[3] = {-2, 0, 5};
+global float center3[3] = {2,0,5};//{-2, 0.3, 2};
+global float center4[3] = {0, -5001, 0};
 
 global float color1[3] = {255, 0, 0};
 global float color2[3] = {0, 0, 255};
 global float color3[3] = {0, 255, 0};
 global float color4[3] = {255, 255 , 0};
 
-global float radius1 = 0.5;
-global float radius2 = 1;
-global float radius3 = 0.25;
-global float radius4 = 1;
+global float radius1 = 1.5;
+global float radius2 = 2;
+global float radius3 = 2;
+global float radius4 = 8660;
 
 
 internal void render_spheres()
@@ -46,23 +46,23 @@ internal void render_spheres()
 	VIEWPORT viewport;
 	CANVAS canvas = set_canvas(BitmapWidth, BitmapHeight);
 
-	SPHERE sphere1 = set_sphere(center1, color1, radius1, 1000);
-	SPHERE sphere2 = set_sphere(center2, color2, radius2, 500);
-	SPHERE sphere3 = set_sphere(center3, color3, radius3, 500);
-	SPHERE sphere4 = set_sphere(center4, color4, radius4, 500);	
+	SPHERE sphere1 = set_sphere(center1, color1, radius1, 500, 0.4);
+	SPHERE sphere2 = set_sphere(center2, color2, radius2, 500, 0.5);
+	SPHERE sphere3 = set_sphere(center3, color3, radius3, 500, 0.6);
+	SPHERE sphere4 = set_sphere(center4, color4, radius4, 1000, 0);	
 
 	SPHERE spheres[] = {sphere1, sphere2, sphere3, sphere4};
 
-	LIGHT ambient_light = set_ambient_light(0.1);
-	float point_light_pos[3] = {1,0,1};
+	LIGHT ambient_light = set_ambient_light(0.2);
+	float point_light_pos[3] = {2,1,0};
 	LIGHT point_light = set_point_light(point_light_pos, 0.6);
-	float direction_ligth_dir[3] = {0, 0, 2};
-	LIGHT direction_ligth = set_directional_light(direction_ligth_dir, 0.5);
+	float direction_ligth_dir[3] = {1, 4, 4};
+	LIGHT direction_ligth = set_directional_light(direction_ligth_dir, 0.2);
 
 	LIGHT lights[] = {ambient_light, point_light, direction_ligth};
 	SCENE scene = set_scene(spheres, lights);	
 
-	float eye_position[3] = {0,0,-4};
+	float eye_position[3] = {0,0,-2};
 	//float eye_position[3] = {-2.5, 0, -2};
 	//float eye_position[3] = {2.5, 0, -2};
 	
@@ -82,12 +82,12 @@ internal void render_spheres()
 	int Pitch = BytesPerPixel*BitmapWidth;
 	uint8 *Row = (uint8 *)BitmapMemory;
 	for(int Y = 0; Y < BitmapHeight; Y++)
-	{
+	{	
 		uint32 *Pixel = (uint32 *)Row;
 		for(int X = 0; X < BitmapWidth; X++)
 		{
 
-			VECTOR3D rgb = trace_ray(scene, eye, canvas, viewport, X, Y);
+			VECTOR3D rgb = simulate_pixel_color(scene, eye, canvas, viewport, X, Y, 2);
 
 			uint8 *PixelColor = (uint8 *)Pixel;
 			*PixelColor = (uint8)rgb.values[2]; //Blue
@@ -156,11 +156,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			TranslateMessage(&Msg);
 			DispatchMessage(&Msg);
 		}
-		
-
-		render_spheres();
-		
-		UpdateWindow(hMainWindow);
 		
 	}
 }
