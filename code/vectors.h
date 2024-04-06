@@ -90,7 +90,7 @@ VECTOR3D vec_proj(VECTOR3D vec1, VECTOR3D vec2)
 VECTOR3D reflect(VECTOR3D vec, VECTOR3D surface_normal)
 {
     VECTOR3D reflected_vector;
-    reflected_vector = vec_sum(vec_proj(vec, surface_normal), vec_MultbyScalar(vec, -1));
+    reflected_vector = vec_sum(vec_MultbyScalar(vec_proj(vec, surface_normal),2), vec_MultbyScalar(vec, -1));
     return reflected_vector;
 } 
 
