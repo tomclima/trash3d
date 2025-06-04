@@ -3,7 +3,6 @@
 - Ability to render spheres given their mathematical descriptions with clear sense of deph
 - Simulation of their interaction with light given the color and specularity of their surfaces
 -  three kinds of light: ambient (base lighting for the entire scene), point (omnidirectional) and directional (rays in parallel, like the sun).
-- able to move the camera at will and rotate it in its Y axis
 
 ## Running on Windows
 To run this program on windows just clone de repository and, in the trash3d directory, run these commands into your shell:
